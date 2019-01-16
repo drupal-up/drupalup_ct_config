@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Implementing hooks here.
+ */
+
+/**
+ * Implements hook_form_alter().
+ */
+function drupalup_ct_config_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'node_type_edit_form') {
+    // Getting the config.
+    $config = \Drupal::service('config.factory')
+      ->get('drupalup_ct_config.settings');
+    // Creating a config name that will match the structure of our config.
+    // Which is contenttype.claims.
+    $config_name = $form['type']['#default_value'] . '.claims';
+
+    // We pass the config name as a hidden value to be able to save it
+    // on submit.
+    $form['config_name'] = [
+      '#type' => 'hidden',
+      '#value' => $config_name,
+    ];
+
+    $form['claim_wrapper'] = [
+      '#type' => 'details',
+      '#title' => t('Claims settings'),
+      '#group' => 'additional_settings',
+    ];
+
+    $form['claims'] = [
+      '#type' => 'checkbox',
+      '#title' => 'Claims',
+      '#group' => 'claim_wrapper',
+      '#default_value' => !is_null($config->get($config_name)) ? $config->get($config_name) : 0,
+    ];
+    $form['actions']['submit']['#submit'][] = 'drupalup_ct_config_node_type_form_submit';
+  }
+
+}
+
+/**
+ * Implements a submit function for the node type edit form.
+ */
+function drupalup_ct_config_node_type_form_submit(array $form, $form_state) {
+  if (
+    $form_state->hasValue('claims')
+    && $form_state->hasValue('config_name')
+  ) {
+    $config_factory = \Drupal::service('config.factory');
+    $config_factory->getEditable('drupalup_ct_config.settings')
+      ->set($form_state->getValue('config_name'), $form_state->getValue('claims'))
+      ->save();
+    drupal_set_message(t('Claims value saved successfully.'));
+  }
+}

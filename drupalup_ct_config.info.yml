@@ -1,0 +1,4 @@
+name: Config Content Type Config
+description: A simple content type field
+type: module
+core: 8.x
